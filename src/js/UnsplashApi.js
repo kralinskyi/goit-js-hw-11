@@ -1,31 +1,25 @@
 'use strict';
+import axios from 'axios';
+
+const instance = axios.create({
+  baseURL: 'https://api.unsplash.com',
+});
 
 export class UnsplashAPI {
   #API_KEY = 'LxvKVGJqiSe6NcEVZOaLXC-f2JIIWZaq_o0WrF8mwJc';
-  #BASE_URL = 'https://api.unsplash.com';
-
-  #BASE_SEARCH_PARAMS = {
-    per_page: 12,
-    color: 'black_and_white',
-    client_id: this.#API_KEY,
-  };
 
   page = 1;
   query = null;
 
   fetchPhotos() {
-    const searchParams = new URLSearchParams({
-      ...this.#BASE_SEARCH_PARAMS,
-      page: this.page,
-      query: this.query,
+    return instance.get('/search/photos?', {
+      params: {
+        query: this.query,
+        page: this.page,
+        per_page: 12,
+        color: 'teal',
+        client_id: this.#API_KEY,
+      },
     });
-    return fetch(`${this.#BASE_URL}/search/photos?${searchParams}}`).then(
-      res => {
-        if (!res.ok) {
-          throw new Error(res.status);
-        }
-        return res.json();
-      }
-    );
   }
 }

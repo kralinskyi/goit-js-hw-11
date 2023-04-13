@@ -1,55 +1,55 @@
+// ? ************************************** //
 import { UnsplashAPI } from './UnsplashApi';
 import createGalleryCards from '../templates/gallery-card.hbs';
+
+const unsplashAPI = new UnsplashAPI();
 
 const searchFormEl = document.querySelector('.js-search-form');
 const galleryListEl = document.querySelector('.js-gallery');
 const loadMoreBtnEl = document.querySelector('.js-load-more');
 
-const unsplashAPI = new UnsplashAPI();
-
-function handleSearchPhotos(e) {
+async function onSearchBtnClick(e) {
   e.preventDefault();
 
-  const searchQuery = e.target.elements['user-search-query'].value.trim();
+  try {
+    const searchQuery = e.target.elements['user-search-query'].value.trim();
+    unsplashAPI.query = searchQuery;
 
-  unsplashAPI.query = searchQuery;
-
-  unsplashAPI
-    .fetchPhotos()
-    .then(data => {
-      if (!data.results.length) {
-        throw new Error();
-      }
-
-      galleryListEl.innerHTML = createGalleryCards(data.results);
-
-      if (data.total_pages === unsplashAPI.page) {
-        return;
-      }
-
-      loadMoreBtnEl.classList.remove('is-hidden');
-    })
-    .catch(error => {
-      loadMoreBtnEl.classList.add('is-hidden');
-      galleryListEl.textContent = 'images dont found';
-    });
-}
-
-function handleLoadMoreBtnClick() {
-  unsplashAPI.page += 1;
-
-  unsplashAPI.fetchPhotos().then(data => {
-    if (unsplashAPI.page === data.total_pages) {
-      loadMoreBtnEl.classList.add('is-hidden');
+    const { data } = await unsplashAPI.fetchPhotos(searchQuery);
+    if (!data.results.length) {
+      console.log('No such photos!');
+      return;
+    }
+    if (data.total_pages === unsplashAPI.page) {
+      return;
     }
 
-    galleryListEl.insertAdjacentHTML(
-      'beforeend',
-      createGalleryCards(data.results)
-    );
-  });
+    galleryListEl.innerHTML = createGalleryCards(data.results);
+    loadMoreBtnEl.classList.remove('is-hidden');
+  } catch (error) {
+    loadMoreBtnEl.classList.add('is-hidden');
+    galleryListEl.textContent = 'images dont found';
+  }
 }
 
-searchFormEl.addEventListener('submit', handleSearchPhotos);
+async function onLoadMoreBtnClick() {
+  unsplashAPI.page += 1;
+  try {
+    const { data } = await unsplashAPI.fetchPhotos(searchQuery);
+    if (data.total_pages === unsplashAPI.page) {
+      loadMoreBtnEl.classList.add('is-hidden');
 
-loadMoreBtnEl.addEventListener('click', handleLoadMoreBtnClick);
+      galleryListEl.insertAdjacentHTML(
+        'beforeend',
+        createGalleryCards(data.results)
+      );
+    }
+  } catch (error) {
+    console.log();
+  }
+
+  // console.log(unsplashAPI.fetchPhotos());
+}
+
+searchFormEl.addEventListener('submit', onSearchBtnClick);
+loadMoreBtnEl.addEventListener('click', onLoadMoreBtnClick);
